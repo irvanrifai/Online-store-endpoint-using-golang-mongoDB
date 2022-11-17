@@ -54,27 +54,27 @@ func GetAllItemEndpoint(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 	defer cursor.Close(context.TODO())
-	for cursor.Next(context.TODO()){
+	for cursor.Next(context.TODO()) {
 		var item Item
 		cursor.Decode(&item)
-		items = append(items,item)
+		items = append(items, item)
 	}
-	if err := cursor.Err(); err != nil{
+	if err := cursor.Err(); err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"messsage":"` + err.Error() + `"}`))
-		return	
+		return
 	}
 	json.NewEncoder(response).Encode(items)
 }
 
-func GetItemEndpoint(response http.ResponseWriter, request *http.Request)  {
+func GetItemEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	params := mux.Vars(request)
 	id, _ := primitive.ObjectIDFromHex(params["id"])
 	var item Item
 	collection := client.Database("online_store").Collection("items")
 	err := collection.FindOne(context.TODO(), Item{ID: id}).Decode(&item)
-	if err != nil{
+	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"messsage":"` + err.Error() + `"}`))
 		return
@@ -82,18 +82,18 @@ func GetItemEndpoint(response http.ResponseWriter, request *http.Request)  {
 	json.NewEncoder(response).Encode(item)
 }
 
-func UpdateItemEndpoint(response http.ResponseWriter, request *http.Request)  {
+func UpdateItemEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 }
 
-func DeleteItemEndpoint(response http.ResponseWriter, request *http.Request)  {
+func DeleteItemEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	params := mux.Vars(request)
 	id, _ := primitive.ObjectIDFromHex(params["id"])
 	var item Item
 	collection := client.Database("online_store").Collection("items")
 	err := collection.FindOne(context.TODO(), Item{ID: id}).Decode(&item)
-	if err != nil{
+	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"messsage":"` + err.Error() + `"}`))
 		return
