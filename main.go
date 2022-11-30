@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 
 	// "time"
 
@@ -84,10 +85,6 @@ func GetItemEndpoint(response http.ResponseWriter, request *http.Request) {
 
 func UpdateItemEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
-}
-
-func DeleteItemEndpoint(response http.ResponseWriter, request *http.Request) {
-	response.Header().Add("content-type", "application/json")
 	params := mux.Vars(request)
 	id, _ := primitive.ObjectIDFromHex(params["id"])
 	var item Item
@@ -98,6 +95,22 @@ func DeleteItemEndpoint(response http.ResponseWriter, request *http.Request) {
 		response.Write([]byte(`{"messsage":"` + err.Error() + `"}`))
 		return
 	}
+	json.NewEncoder(response).Encode(item)
+}
+
+func DeleteItemEndpoint(response http.ResponseWriter, request *http.Request) {
+	response.Header().Add("content-type", "application/json")
+	params := mux.Vars(request)
+	id, _ := primitive.ObjectIDFromHex(params["id"])
+	var item Item
+	collection := client.Database("online_store").Collection("items")
+	res, err := collection.DeleteOne(context.TODO(), bson.M{"_id" : id})
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"messsage":"` + err.Error() + `"}`))
+		return
+	}
+	fmt.Println("Delete success : ", reflect.TypeOf(res))
 	json.NewEncoder(response).Encode(item)
 }
 
@@ -112,6 +125,8 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", GetAllItemEndpoint).Methods("GET")
 	router.HandleFunc("/{id}", GetItemEndpoint).Methods("GET")
-	router.HandleFunc("/item", CreateItemEndpoint).Methods("POST")
+	router.HandleFunc("/create", CreateItemEndpoint).Methods("POST")
+	router.HandleFunc("/update/{id}", UpdateItemEndpoint).Methods("POST")
+	router.HandleFunc("/delete/{id}", DeleteItemEndpoint).Methods("POST")
 	http.ListenAndServe(":3000", router)
 }
