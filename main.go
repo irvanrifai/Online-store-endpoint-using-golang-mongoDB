@@ -89,12 +89,28 @@ func UpdateItemEndpoint(response http.ResponseWriter, request *http.Request) {
 	id, _ := primitive.ObjectIDFromHex(params["id"])
 	var item Item
 	collection := client.Database("online_store").Collection("items")
-	err := collection.FindOne(context.TODO(), Item{ID: id}).Decode(&item)
+	er := collection.FindOne(context.TODO(), Item{ID: id}).Decode(&item)
+	if er != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"messsage":"` + er.Error() + `"}`))
+		return
+	}
+	// getData := json.NewEncoder(response).Encode(item)
+
+	datasUpdated := bson.D{{Key: "$set", Value: item}}
+	// datasUpdated := bson.M{
+	// 	"$set" : getData,
+	// }
+	resultData, err := collection.UpdateOne(context.TODO(), bson.M{"_id": id}, datasUpdated)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"messsage":"` + err.Error() + `"}`))
 		return
 	}
+	fmt.Println("Update success : ", reflect.TypeOf(resultData))
+	// fmt.Println(params)
+	// fmt.Println(getData)
+	fmt.Println(resultData)
 	json.NewEncoder(response).Encode(item)
 }
 
@@ -104,7 +120,7 @@ func DeleteItemEndpoint(response http.ResponseWriter, request *http.Request) {
 	id, _ := primitive.ObjectIDFromHex(params["id"])
 	var item Item
 	collection := client.Database("online_store").Collection("items")
-	res, err := collection.DeleteOne(context.TODO(), bson.M{"_id" : id})
+	res, err := collection.DeleteOne(context.TODO(), bson.M{"_id": id})
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"messsage":"` + err.Error() + `"}`))
@@ -126,7 +142,8 @@ func main() {
 	router.HandleFunc("/", GetAllItemEndpoint).Methods("GET")
 	router.HandleFunc("/{id}", GetItemEndpoint).Methods("GET")
 	router.HandleFunc("/create", CreateItemEndpoint).Methods("POST")
-	router.HandleFunc("/update/{id}", UpdateItemEndpoint).Methods("POST")
-	router.HandleFunc("/delete/{id}", DeleteItemEndpoint).Methods("POST")
+	router.HandleFunc("/update/{id}", UpdateItemEndpoint).Methods("PUT")
+	router.HandleFunc("/delete/{id}", DeleteItemEndpoint).Methods("DELETE")
+	fmt.Println("Server run http://localhost:3000")
 	http.ListenAndServe(":3000", router)
 }
